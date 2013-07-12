@@ -1,0 +1,4 @@
+#ID	name	airfuel_ratio	HHF	density	viscosity	molecular_weight
+0	Air	-	-	1.1840	1.965e-5	28.97
+2	CH4	17.195	55.49	.6569	1.0997e-5	16.044
+12	C3H8	15.246	50.36	1.8316	8.01e-5	44.10
