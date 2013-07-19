@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'new_setup_ui.ui'
 #
-# Created: Fri Jul 12 17:05:07 2013
+# Created: Fri Jul 19 14:55:21 2013
 #      by: PyQt4 UI code generator 4.10
 #
 # WARNING! All changes made in this file will be lost!
@@ -277,15 +277,19 @@ class Ui_NewSetupWindow(object):
         self.inputFlowmeterID.addItem(_fromUtf8(""))
         self.inputFlowmeterID.addItem(_fromUtf8(""))
         self.buttonAddFlowmeter = QtGui.QPushButton(self.tab_gas)
-        self.buttonAddFlowmeter.setGeometry(QtCore.QRect(320, 30, 41, 211))
+        self.buttonAddFlowmeter.setGeometry(QtCore.QRect(320, 30, 41, 121))
         self.buttonAddFlowmeter.setObjectName(_fromUtf8("buttonAddFlowmeter"))
         self.buttonRemoveFlowmeter = QtGui.QPushButton(self.tab_gas)
-        self.buttonRemoveFlowmeter.setGeometry(QtCore.QRect(320, 250, 41, 91))
+        self.buttonRemoveFlowmeter.setGeometry(QtCore.QRect(320, 300, 41, 41))
         self.buttonRemoveFlowmeter.setObjectName(_fromUtf8("buttonRemoveFlowmeter"))
         self.listFlowmeter = QtGui.QTreeWidget(self.tab_gas)
         self.listFlowmeter.setGeometry(QtCore.QRect(370, 30, 321, 311))
+        self.listFlowmeter.setSelectionMode(QtGui.QAbstractItemView.MultiSelection)
         self.listFlowmeter.setObjectName(_fromUtf8("listFlowmeter"))
         self.listFlowmeter.header().setDefaultSectionSize(70)
+        self.buttonMixFlowmeter = QtGui.QPushButton(self.tab_gas)
+        self.buttonMixFlowmeter.setGeometry(QtCore.QRect(320, 250, 41, 41))
+        self.buttonMixFlowmeter.setObjectName(_fromUtf8("buttonMixFlowmeter"))
         self.tabWidget.addTab(self.tab_gas, _fromUtf8(""))
         self.buttonCreate = QtGui.QPushButton(NewSetupWindow)
         self.buttonCreate.setGeometry(QtCore.QRect(550, 400, 75, 23))
@@ -386,6 +390,7 @@ class Ui_NewSetupWindow(object):
         self.listFlowmeter.headerItem().setText(2, _translate("NewSetupWindow", "GasID", None))
         self.listFlowmeter.headerItem().setText(3, _translate("NewSetupWindow", "Capacity", None))
         self.listFlowmeter.headerItem().setText(4, _translate("NewSetupWindow", "Port", None))
+        self.buttonMixFlowmeter.setText(_translate("NewSetupWindow", "MIX", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_gas), _translate("NewSetupWindow", "Flowmeter", None))
         self.buttonCreate.setText(_translate("NewSetupWindow", "Create", None))
         self.buttonCancel.setText(_translate("NewSetupWindow", "Cancel", None))

@@ -1011,7 +1011,7 @@
        <x>320</x>
        <y>30</y>
        <width>41</width>
-       <height>211</height>
+       <height>121</height>
       </rect>
      </property>
      <property name="text">
@@ -1022,9 +1022,9 @@
      <property name="geometry">
       <rect>
        <x>320</x>
-       <y>250</y>
+       <y>300</y>
        <width>41</width>
-       <height>91</height>
+       <height>41</height>
       </rect>
      </property>
      <property name="text">
@@ -1039,6 +1039,9 @@
        <width>321</width>
        <height>311</height>
       </rect>
+     </property>
+     <property name="selectionMode">
+      <enum>QAbstractItemView::MultiSelection</enum>
      </property>
      <attribute name="headerDefaultSectionSize">
       <number>70</number>
@@ -1068,6 +1071,19 @@
        <string>Port</string>
       </property>
      </column>
+    </widget>
+    <widget class="QPushButton" name="buttonMixFlowmeter">
+     <property name="geometry">
+      <rect>
+       <x>320</x>
+       <y>250</y>
+       <width>41</width>
+       <height>41</height>
+      </rect>
+     </property>
+     <property name="text">
+      <string>MIX</string>
+     </property>
     </widget>
    </widget>
   </widget>

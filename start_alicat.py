@@ -83,7 +83,9 @@ class NewSetupWindow(QtGui.QDialog,Ui_NewSetupWindow):
         # -> Flowmeters Tab
         QtCore.QObject.connect(self.buttonAddFlowmeter,QtCore.SIGNAL("clicked()"), self.addFlowmeterToList)
         QtCore.QObject.connect(self.buttonRemoveFlowmeter,QtCore.SIGNAL("clicked()"), self.removeFlowmeterFromList)
+        QtCore.QObject.connect(self.buttonMixFlowmeter,QtCore.SIGNAL("clicked()"), self.mixSelectedStreams)
         QtCore.QObject.connect(self.inputGasName,QtCore.SIGNAL("currentIndexChanged(int)"), self.updateGasSettings)
+        
 
     def createSetup(self):
         self.getGeometryParams()
@@ -190,32 +192,63 @@ class NewSetupWindow(QtGui.QDialog,Ui_NewSetupWindow):
     #####                        #####
     ##################################
 
-    flowmeterList = []
+    flowmeterList = [] # ID, GasName, GasID, MaxCapacity, SerialPort, MixID
+    mixtureList = [] # ID, mixtureType, flowA, flowB
 
-    def addFlowmeterToList(self):
+    def addFlowmeterToView(self):
         flowmeterParams = [ str(self.inputFlowmeterID.currentText()),
                             str(self.inputGasName.currentText()),
                             str(self.inputGasID.text()),
                             str(self.inputMaxCapacity.text()),
-                            str(self.inputSerialPort.currentText()) ]
+                            str(self.inputSerialPort.currentText()),
+                            0 ] # MixID is used to define a mixture stream (default for 0 - none)
         
+        if self.addFlowmeterToList(flowmeterParams):            
+            #add new flowmeter item to tree view list
+            flowmeterTreeView = QtGui.QTreeWidgetItem(self.listFlowmeter,flowmeterParams)
+
+    def addFlowmeterToList(self,flowmeterParams):
+        #validate if flowmeter ID does not exist in the list before adding to the list
         if not self.flowmeterIdIsUsed(self.inputFlowmeterID.currentText()):            
             self.flowmeterList.append(flowmeterParams)
-            flowmeter = QtGui.QTreeWidgetItem(self.listFlowmeter,flowmeterParams)
-                            
+            return True
 
-    def removeFlowmeterFromList(self):
+    def removeFlowmeterFromList(self,FM_id):
+        for index, fList in enumerate(self.flowmeterList):
+            if FM_id == fList[0]:
+                self.flowmeterList.pop(index)
+                break
+                            
+    def removeFlowmeterFromView(self):
         selectedFlowmeter = self.listFlowmeter.currentItem()
         if not selectedFlowmeter == None:
             #remove from QTreeWidget
             self.listFlowmeter.takeTopLevelItem(self.listFlowmeter.indexOfTopLevelItem(selectedFlowmeter))
             #remove from flowmeterList
-            id = selectedFlowmeter.text(0)
-            for index, fList in enumerate(self.flowmeterList):
-                if id == fList[0]:
-                    self.flowmeterList.pop(index)
-                    break
+            self.removeFlowmeterFromList(selectedFlowmeter.text(0))
+            
         
+    def mixSelectedStreams(self):
+        #get selected items
+        selectedFlowmeters = self.listFlowmeter.selectedItems()
+
+        #remove selected items from top-level treeView
+        for SF in selectedFlowmeters:
+            self.listFlowmeter.takeTopLevelItem(self.listFlowmeter.indexOfTopLevelItem(SF))
+
+        #open mixture settings dialog 
+
+
+        #add Mix top-level item to list
+        
+
+        #add selected items to Mix top-level item
+
+        #update MixID in the flowmeterList of both items 
+        
+        
+
+
 
     def flowmeterIdIsUsed(self,id):
         for index, fList in enumerate(self.flowmeterList):
