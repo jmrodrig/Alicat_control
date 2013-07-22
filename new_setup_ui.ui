@@ -1031,7 +1031,7 @@
       <string>X</string>
      </property>
     </widget>
-    <widget class="QTreeWidget" name="listFlowmeter">
+    <widget class="QTreeWidget" name="treeViewFlowmeters">
      <property name="geometry">
       <rect>
        <x>370</x>
@@ -1041,7 +1041,7 @@
       </rect>
      </property>
      <property name="selectionMode">
-      <enum>QAbstractItemView::MultiSelection</enum>
+      <enum>QAbstractItemView::ExtendedSelection</enum>
      </property>
      <attribute name="headerDefaultSectionSize">
       <number>70</number>

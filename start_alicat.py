@@ -11,6 +11,7 @@ import record
 from PyQt4 import QtCore, QtGui
 from alicat_control_ui import Ui_MainWindow
 from new_setup_ui import Ui_NewSetupWindow
+from mixture_settings_dialog import Ui_MixtureSettingsDialog
 from threading import Thread
 from datetime import datetime
 
@@ -81,8 +82,8 @@ class NewSetupWindow(QtGui.QDialog,Ui_NewSetupWindow):
         QtCore.QObject.connect(self.inputGeometryNumber,QtCore.SIGNAL("editingFinished()"),self.updateGeometryParams)
 
         # -> Flowmeters Tab
-        QtCore.QObject.connect(self.buttonAddFlowmeter,QtCore.SIGNAL("clicked()"), self.addFlowmeterToList)
-        QtCore.QObject.connect(self.buttonRemoveFlowmeter,QtCore.SIGNAL("clicked()"), self.removeFlowmeterFromList)
+        QtCore.QObject.connect(self.buttonAddFlowmeter,QtCore.SIGNAL("clicked()"), self.addFlowmeterToView)
+        QtCore.QObject.connect(self.buttonRemoveFlowmeter,QtCore.SIGNAL("clicked()"), self.removeFlowmetersFromView)
         QtCore.QObject.connect(self.buttonMixFlowmeter,QtCore.SIGNAL("clicked()"), self.mixSelectedStreams)
         QtCore.QObject.connect(self.inputGasName,QtCore.SIGNAL("currentIndexChanged(int)"), self.updateGasSettings)
         
@@ -193,7 +194,7 @@ class NewSetupWindow(QtGui.QDialog,Ui_NewSetupWindow):
     ##################################
 
     flowmeterList = [] # ID, GasName, GasID, MaxCapacity, SerialPort, MixID
-    mixtureList = [] # ID, mixtureType, flowA, flowB
+    mixtureList = [] # ID, mixtureName, isReactingMixture, flowA, flowB
 
     def addFlowmeterToView(self):
         flowmeterParams = [ str(self.inputFlowmeterID.currentText()),
@@ -201,58 +202,117 @@ class NewSetupWindow(QtGui.QDialog,Ui_NewSetupWindow):
                             str(self.inputGasID.text()),
                             str(self.inputMaxCapacity.text()),
                             str(self.inputSerialPort.currentText()),
-                            0 ] # MixID is used to define a mixture stream (default for 0 - none)
+                            0 ] # MixID is used to define a mixture stream (default: 0 - none)
         
         if self.addFlowmeterToList(flowmeterParams):            
-            #add new flowmeter item to tree view list
-            flowmeterTreeView = QtGui.QTreeWidgetItem(self.listFlowmeter,flowmeterParams)
+            # add new flowmeter item to tree view list
+            flowmeterTreeViewItem = QtGui.QTreeWidgetItem(self.treeViewFlowmeters,flowmeterParams[:-1])
 
     def addFlowmeterToList(self,flowmeterParams):
-        #validate if flowmeter ID does not exist in the list before adding to the list
+        # validate if flowmeter ID does not exist in the list before adding to the list
         if not self.flowmeterIdIsUsed(self.inputFlowmeterID.currentText()):            
             self.flowmeterList.append(flowmeterParams)
             return True
 
-    def removeFlowmeterFromList(self,FM_id):
+    def removeFlowmetersFromList(self,FM_id):
         for index, fList in enumerate(self.flowmeterList):
             if FM_id == fList[0]:
                 self.flowmeterList.pop(index)
                 break
+
+    def findMixtureNameFromList(self,mixName):
+        for index, mList in enumerate(self.mixtureList):
+            if mixName == mList[0]:
+                return index
+        return False
+
+    def findMixtureFlowMetersFromList(self,FM):
+        for index, mList in enumerate(self.mixtureList):
+            if FM == mList[2] or FM == mList[3]:
+                return index
+        return False
                             
-    def removeFlowmeterFromView(self):
-        selectedFlowmeter = self.listFlowmeter.currentItem()
-        if not selectedFlowmeter == None:
-            #remove from QTreeWidget
-            self.listFlowmeter.takeTopLevelItem(self.listFlowmeter.indexOfTopLevelItem(selectedFlowmeter))
-            #remove from flowmeterList
-            self.removeFlowmeterFromList(selectedFlowmeter.text(0))
-            
+    def removeFlowmetersFromView(self):
+        selectedFlowmeters = self.treeViewFlowmeters.selectedItems()
+        if not selectedFlowmeters == None:
+            for SL in selectedFlowmeters:
+                if SL.childCount() == 0 and SL.parent() == None:          # select non-mixture flowmeter items only (items have no children and no parents)
+                    # remove from QTreeWidget
+                    self.treeViewFlowmeters.takeTopLevelItem(self.treeViewFlowmeters.indexOfTopLevelItem(SL))
+                    # remove from flowmeterList
+                    self.removeFlowmetersFromList(SL.text(0))
+                elif SL.parent() == None:                                 # select mixture items (items have no parents)
+                    # remove from QTreeWidget
+                    self.treeViewFlowmeters.takeTopLevelItem(self.treeViewFlowmeters.indexOfTopLevelItem(SL))
+                    # remove mixture flowmeters from flowmeters list
+                    mix = self.mixtureList[self.findMixtureNameFromList(SL.text(0))]
+                    self.removeFlowmetersFromList(mix[2])
+                    self.removeFlowmetersFromList(mix[3])
+                    # remove from mixture list
+                    self.mixtureList.pop(self.findMixtureNameFromList(SL.text(0)))
+                    
         
     def mixSelectedStreams(self):
-        #get selected items
-        selectedFlowmeters = self.listFlowmeter.selectedItems()
+        # get selected items
+        selectedFlowmeters = self.treeViewFlowmeters.selectedItems()
 
+        # VALIDATE SELECTION
+        # check if selected items are not mixtures
+        for SL in selectedFlowmeters:
+            if not SL.childCount() == 0:
+                return 0
+
+        # check if any of the flowmeters is already in use in a mixture
+        for SL in selectedFlowmeters:
+            if not SL.parent() == None:
+                message = QtGui.QMessageBox.information(self,'Warning!','Flowmeter(s) already in use in another mixture.')
+                return 0
+            
+        # check if 2 flowmeters are selected
+        if not len(selectedFlowmeters) == 2:
+            message = QtGui.QMessageBox.information(self,'Warning!','Select 2 Flowmeters')
+            return 0
+
+
+        # open mixture settings dialog and get new mixture params 
+        mixtureParams = self.getMixtureSettings(selectedFlowmeters) # [ mixtureName, isReactingMixture, flowA, flowB ]
+
+        if mixtureParams == False:
+            return 0   # cancel button was pressed
+        
         #remove selected items from top-level treeView
         for SF in selectedFlowmeters:
-            self.listFlowmeter.takeTopLevelItem(self.listFlowmeter.indexOfTopLevelItem(SF))
-
-        #open mixture settings dialog 
-
+            self.treeViewFlowmeters.takeTopLevelItem(self.treeViewFlowmeters.indexOfTopLevelItem(SF))
 
         #add Mix top-level item to list
-        
+        mixName = mixtureParams[0]
+        mixtureTreeViewItem = QtGui.QTreeWidgetItem(self.treeViewFlowmeters)
+        mixtureTreeViewItem.setText(0,mixName)
 
         #add selected items to Mix top-level item
+        mixtureTreeViewItem.addChildren(selectedFlowmeters)
+        mixtureTreeViewItem.setExpanded(True)
 
-        #update MixID in the flowmeterList of both items 
+        #update mixtureList
+        self.mixtureList.append(mixtureParams)
+        print self.mixtureList
         
-        
+    def getMixtureSettings(self,selectedFlowmeters):
+        MSDDialog = MixtureSettingsDialog(selectedFlowmeters,self.mixtureList)
+        MSDResult = MSDDialog.exec_()
+        if MSDResult == 1:
+            mixtureName = MSDDialog.inputMixtureName.text()
+            isReactingMixture = MSDDialog.inputIsReactingMixture.isChecked()
+            flowA = MSDDialog.inputFlowA.currentText()
+            flowB = MSDDialog.inputFlowB.currentText()
+            return [ mixtureName, isReactingMixture, flowA, flowB ]
+        else:
+            return False
 
 
-
-    def flowmeterIdIsUsed(self,id):
+    def flowmeterIdIsUsed(self,flometerId):
         for index, fList in enumerate(self.flowmeterList):
-            if id == fList[0]:
+            if flometerId == fList[0]:
                 return True
         return False
 
@@ -264,6 +324,12 @@ class NewSetupWindow(QtGui.QDialog,Ui_NewSetupWindow):
         for index in lineIndex:
             content[index] = content[index][:-2].split('\t')
         return content
+
+    def findFlowmeterFromList(self,flometerId):
+        for index, fList in enumerate(self.flowmeterList):
+            if flometerId == fList[0]:
+                return self.flowmeterList[index]
+        return False
 
     def updateGasSettings(self):
         gasIndex = self.inputGasName.currentIndex()
@@ -282,7 +348,48 @@ class NewSetupWindow(QtGui.QDialog,Ui_NewSetupWindow):
 ##
 ##    def getFlowmeterParams(self):
 
-    
+
+class MixtureSettingsDialog(QtGui.QDialog,Ui_MixtureSettingsDialog):
+
+    def __init__(self,SL,mixList):
+        QtGui.QDialog.__init__(self)
+        self.setupUi(self)
+        self.selectedFlowmeters = SL
+        self.mixtureList = mixList
+
+        self.inputMixtureName.setText('Mix' + str(len(self.mixtureList) + 1))
+        for item in self.selectedFlowmeters:
+            self.inputFlowA.addItem(item.text(0))
+            self.inputFlowB.addItem(item.text(0))
+
+        self.inputFlowA.setCurrentIndex(0)
+        self.labelFlowA.setText(self.selectedFlowmeters[0].text(1))
+        self.inputFlowB.setCurrentIndex(1)
+        self.labelFlowB.setText(self.selectedFlowmeters[1].text(1))
+        
+        QtCore.QObject.connect(self.inputFlowA,QtCore.SIGNAL("currentIndexChanged(int)"), self.updateLabels)
+        QtCore.QObject.connect(self.inputFlowB,QtCore.SIGNAL("currentIndexChanged(int)"), self.updateLabels)
+
+        QtCore.QObject.connect(self.buttonValidateAndAccept,QtCore.SIGNAL("clicked()"), self.validateAndAccept)
+        QtCore.QObject.connect(self.buttonCancel,QtCore.SIGNAL("clicked()"), self.reject)
+
+    def updateLabels(self):
+        self.labelFlowA.setText(self.selectedFlowmeters[self.inputFlowA.currentIndex()].text(1))
+        self.labelFlowB.setText(self.selectedFlowmeters[self.inputFlowB.currentIndex()].text(1))
+        
+    def validateMixtureName(self):
+        for index, mList in enumerate(self.mixtureList):
+            if self.inputMixtureName.text() == mList[0]:
+                return False
+        return True
+
+    def validateAndAccept(self):
+        if self.inputFlowA.currentIndex() == self.inputFlowB.currentIndex():
+            message = QtGui.QMessageBox.information(self,'Warning!','Flow A and Flow B must not have the same values!')
+        elif not self.validateMixtureName():
+            message = QtGui.QMessageBox.information(self,'Warning!','Mixture name must be unique! ' + self.inputMixtureName.text() + ' is already in use.')
+        else:
+            self.accept()
         
 
 def main():

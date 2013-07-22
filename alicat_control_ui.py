@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'alicat_control_ui.ui'
 #
-# Created: Thu Jul 11 16:09:48 2013
+# Created: Mon Jul 22 09:53:55 2013
 #      by: PyQt4 UI code generator 4.10
 #
 # WARNING! All changes made in this file will be lost!
